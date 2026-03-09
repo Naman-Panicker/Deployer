@@ -1,0 +1,7 @@
+upload-service/dist
+
+.env
+
+node_modules
+
+deploy-service
