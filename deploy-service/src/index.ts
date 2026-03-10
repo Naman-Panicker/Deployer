@@ -64,7 +64,7 @@ const deploy = async ()=>{
             const files = getBuildFiles(path.join(__dirname,`/output/${id}/dist`)) 
 
             await Promise.all(files.map((file) =>
-                uploadBuildFiles(file.split(`/output/${id}`)[1]!, file)
+                uploadBuildFiles(path.join(`build/${id}`, file.split(`/output/${id}/dist/`)[1]!), file)
             ));
 
 
