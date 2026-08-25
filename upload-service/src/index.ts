@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import generateStr from "./generate.js";
-import {simpleGit} from "simple-git";
+import { simpleGit } from "simple-git";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import getAllFiles from "./files.js";
@@ -48,10 +48,10 @@ app.post("/api/v1/upload", async (req: Request, res: Response)=>{
     const id = generateStr();
     console.log(id)
 
-    try{
-        await simpleGit().clone(url, path.join(__dirname,`/output/${id}`))
+    try {
+        await simpleGit().clone(url, path.join(__dirname, `/output/${id}`))
 
-        const files = getAllFiles(path.join(__dirname,`/output/${id}`))
+        const files = getAllFiles(path.join(__dirname, `/output/${id}`))
 
         await Promise.all(files.map((file) =>
             uploadFiles(file.split("/dist/")[1]!, file)
@@ -61,8 +61,8 @@ app.post("/api/v1/upload", async (req: Request, res: Response)=>{
             {
                 QueueUrl: sqsUrl,
                 MessageBody: JSON.stringify({ id }),
-                MessageGroupId: "deploy",        
-                MessageDeduplicationId: id,      
+                MessageGroupId: "deploy",
+                MessageDeduplicationId: id,
             }
         )
 
@@ -71,14 +71,14 @@ app.post("/api/v1/upload", async (req: Request, res: Response)=>{
         res.json({ id })
 
 
-    }catch(error){
+    } catch (error) {
         console.log(error)
         res.status(500).json({
             message: "Deploymeny Failed"
         })
     }
 
-    
+
 })
 
 app.listen(3000);

@@ -5,6 +5,10 @@ export default function getBuildFiles(filepath: string){
 
      let response: string[] = [];
 
+     if (!fs.existsSync(filepath)) {
+         return response;
+     }
+
      const files = fs.readdirSync(filepath)
 
      files.forEach((file)=>{
@@ -17,5 +21,4 @@ export default function getBuildFiles(filepath: string){
      })
 
      return response;
-
 }

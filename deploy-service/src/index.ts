@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeleteMessageCommand, ReceiveMessageCommand, SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
@@ -51,32 +52,39 @@ const deploy = async ()=>{
 
         if(Messages && Messages.length > 0){
             const message = Messages[0];
-            const {id} = JSON.parse(message?.Body!)
+            const {id} = JSON.parse(message?.Body!) //the excalamation marks are for ts error suppression
 
             console.log("Deploying Project: ", id)
 
+            try {
+                await downloadS3Folder(`output/${id}`) 
 
-            await downloadS3Folder(`output/${id}`) 
+                await buildProject(id) 
 
-            await buildProject(id) 
+                const distPath = path.join(__dirname, `output/${id}/dist`)
+                if (!fs.existsSync(distPath)) {
+                    throw new Error(`Build output directory does not exist at: ${distPath}`)
+                }
 
+                const files = getBuildFiles(distPath)
 
-            const files = getBuildFiles(path.join(__dirname,`/output/${id}/dist`)) 
+                await Promise.all(files.map((file) => {
+                    const relativePath = path.relative(distPath, file)
+                    return uploadBuildFiles(path.join(`build/${id}`, relativePath), file)
+                }));
 
-            await Promise.all(files.map((file) =>
-                uploadBuildFiles(path.join(`build/${id}`, file.split(`/output/${id}/dist/`)[1]!), file)
-            ));
+                console.log(`Successfully deployed project: ${id}`)
 
-
-
-            //delete logic
-
-            await subscriber.send(new DeleteMessageCommand(
-                {
-                    QueueUrl: sqsUrl,
-                    ReceiptHandle: message?.ReceiptHandle!,
-                })
-            )
+                //delete logic
+                await subscriber.send(new DeleteMessageCommand(
+                    {
+                        QueueUrl: sqsUrl,
+                        ReceiptHandle: message?.ReceiptHandle!,
+                    })
+                )
+            } catch (error) {
+                console.error(`Deployment failed for project ${id}:`, error)
+            }
         }
     }
 }

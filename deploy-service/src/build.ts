@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function buildProject(id: string) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const child = exec(`cd ${path.join(__dirname, `output/${id}`)} && npm install && npm run build`)
 
         child.stdout?.on('data', function(data) {
@@ -19,8 +19,15 @@ export function buildProject(id: string) {
         });
 
         child.on('close', function(code) {
-           resolve("")
+            if (code === 0) {
+                resolve(code);
+            } else {
+                reject(new Error(`Build failed with exit code ${code}`));
+            }
         });
 
+        child.on('error', function(err) {
+            reject(err);
+        });
     })
 }
